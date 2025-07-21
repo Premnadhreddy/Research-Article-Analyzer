@@ -20,15 +20,13 @@ class team_3:
         str = '='*50
         output.append(str+'\n\tScientist Names Related Comments\n'+str+'\n')
         self.scientistName(text,output)
-        output.append(str+'\n\tIndex Related Comments\n'+str+'\n')
-        output.extend(self.indexCheck())
         #output.append('\n'+str+'\n\tAcronym Related Comments\n'+str)
         self.acron(text,output)
-        
         return output
     
     def scientistName(self,text,output):
         location=dict()
+        location2=dict()
         # "set" to avoid repeatition
         scientist_names_used=set()
         scientist_names_used1=set()
@@ -38,10 +36,14 @@ class team_3:
         #List is used for ordering       
         scientist_names=[['Isaac Newton','Newton'],['Albert Einstein','Einstein'],'Galileo Galilei',['Niels Bohr','Bohr'],'Marie Curie',
                           ['Max Planck','Planck'],['James Clerk Maxwell','Maxwell'],['Werner Heisenberg','Heisenberg'],['Richard Feynman','Feynman'],
-                          ['Erwin Schrödinger','Schrödinger'],'Enrico Fermi','Stephen Hawking','Hawking',['Michael Faraday',
-                         'Faraday'],'Dmitri Mendeleev','Carl Sagan','Andrei Sakharov','Lise Meitner',
-                         'Edwin Hubble','Jocelyn Bell Burnell','Gauss','Chandrasekhar Subrahmanyan',
-                         'Gaussian','Doppler']
+                          ['Erwin Schrodinger','Schrodinger'],'Enrico Fermi','Stephen Hawking','Hawking',['Michael Faraday','Faraday'],'Dmitri Mendeleev','Carl Sagan','Andrei Sakharov','Lise Meitner',
+                         'Edwin Hubble','Jocelyn Bell Burnell','Gauss','Chandrasekhar Subrahmanyan','Gaussian','Doppler', ['Leonhard Euler', 'Euler'],['Michael Atiyah', 'Atiyah'],['Ada Lovelace', 'Lovelace'],['Alan Turing', 'Turing'],['Gregor Mendel', 'Mendel'],['Nikola Tesla', 'Tesla'],
+                         ['Charles Darwin', 'Darwin'],['Rosalind Franklin', 'Franklin'],['Alexander Fleming', 'Fleming'],['Barbara McClintock', 'McClintock'],['Emmy Noether', 'Noether'],['Stephen Jay Gould', 'Gould'],
+                         ['Claude Shannon', 'Shannon'],['Paul Dirac', 'Dirac'],['Henrietta Leavitt', 'Leavitt'],['Jane Goodall', 'Goodall'],"Newton's Laws of Motion", "Einstein's Theory of Relativity", "Bohr Model of the Atom", 
+                         "Planck's Constant", "Maxwell's Equations", "Heisenberg Uncertainty Principle", "Feynman Diagrams", "Schrödinger's Cat", "Fermi Paradox", "Hawking Radiation", "Faraday's Law of Induction", "Mendeleev's Periodic Table", 
+                         "Sagan's Drake Equation Contributions", "Sakharov Conditions", "Meitner–Hahn Hypothesis", "Hubble's Law", "Bell–Burnell Pulsar Discovery", "Gaussian Distribution", "Chandrasekhar Limit", "Doppler Effect", "Euler's Formula", 
+                         "Atiyah–Singer Index Theorem", "Lovelace Algorithm", "Turing Machine", "Mendelian Genetics", "Tesla Coil", "Darwin's Theory of Evolution", "Franklin's X-ray Diffraction Work", "Fleming's Penicillin Discovery", "McClintock's Transposons",
+                           "Noether's Theorem", "Gould's Punctuated Equilibrium Theory", "Shannon's Information Theory", "Dirac Equation", "Leavitt's Law", "Goodall's Chimpanzee Behavior Studies"]
         
         for element in scientist_names:
             if isinstance(element, list):
@@ -58,43 +60,47 @@ class team_3:
         """If the scientist names are present in the text it will add 
         its location in the dictionary along with the real word"""
         for word,realword in zip(scientist_names1,scientist_names2):
-            if text1.find(word)!=-1:
-                location[text1.find(word)]=realword
-                #output.append(str(text1.find(word))+" "+realword)
-                scientist_names_used.add(text[text1.find(word):text1.find(word)+len(word)])
+            pattern = r'\b' + re.escape(word) + r'\b'
+            for match in re.finditer(pattern, text1):
+                start_index = match.start()
+                location[start_index] = realword
+                #output.append(str(start_index)+" "+realword)
+                scientist_names_used.add(text[start_index:start_index+len(word)])
                 scientist_names_used2.add(realword)
             
         #key contains the index number 'character index'
         for key,value in location.items():
             if text[key:key+len(value)]!=value:
                 line=self.lineNumber(key)
-                output.append(" Line "+str(line)+': '+text[key:key+len(value)]+" is not in the correct format.\n")
-        #"At line "+self.line_number(text,key)+":"+
-        for element in scientist_names:
-                # Check if the element is a list
-            if isinstance(element, list):
-                # Check if any element in the sublist is present in S1
-                if any(sub_element in scientist_names_used2 for sub_element in element):
-                    # Add the first element of the sublist to the set
-                    scientist_names_used1.add(element[0])
-            else:
-                # Check if the standalone element is present in S1
-                if element in scientist_names_used2:
-                    # Add the standalone element to the set
-                    scientist_names_used1.add(element)
+                scientist_names_used1.add(value)
+        
         str1=''
-        for word in scientist_names_used1:
+        for word in scientist_names_used2:
             if str1=='':
                 str1=word
             else:
                 str1=str1+', '+word
+
         for word in scientist_names_used:
-            if word[0].islower() is True: # can directly check True/False is True not required
-                output.append(" Line " + str(line) + ": The word '" + word + "' should begin with a capital letter.\n")
+            word_parts = word.split(' ')
+            has_lowercase = False
+            for part in word_parts:
+                if part and part[0].islower():
+                    has_lowercase = True
+                    break
+            
+            if has_lowercase:  # Only print once per scientist name
+                pattern = r'\b' + re.escape(word) + r'\b'
+                for match in re.finditer(pattern, text):
+                    line = self.lineNumber(match.start())
+                    output.append(" Line " + str(line) + " : All words in scientist name '" + word + "' should start with a capital letter.\n")
+                    break  # Only print once per occurrence
+
         if str1=='':
-            output.append(' No Scientist Names Identified.\n')
+            output.append('\n No scientist names found.\n')
         else:
-            output.append('\n Scientist Names Identified = '+str1+'.\n')        
+            output.append('\n Scientist names : '+str1+'.\n')
+
             
 
     def is_string_in_lists(self,search_string, *lists):
@@ -118,66 +124,7 @@ class team_3:
                 pass
         unique_words = []
 
-    def indexCheck(self):
-        text = self.latex_code
-        output = []
-        
-        start_index = text.find(r"\begin{IEEEkeywords}")
-        if start_index == -1:
-            output.append(f" Line {line}: No Index Terms Were Found in the Document.\n")
-            
-        
-        end_index = text.find(r"\end{IEEEkeywords}") 
-        
-        index_text = text[start_index+21:end_index].rstrip() # 21 is to offset \begin{IEEEkeywords}
-        index_text = index_text.strip()
 
-        pattern = re.compile(r'\\.*?{.*?}') # check for \${$} where $ is placeholder for anything of any length
-        pattern_matches = re.findall(pattern,index_text)
-        
-        if len(pattern_matches)>0:
-            line = self.lineNumber(start_index+21)
-            output.append(f"At Line {line} : Index must be a sentence and should not use any formatting.\n")
-            return output
-        
-        
-        index_text_list = index_text.replace(","," ").split(" ")
-        full_stop_check_list = [i.strip() for i in index_text_list if len(i)>=1]
-        index_text_list = [i.strip(" .") for i in index_text_list if len(i)>=1]
-        reference_text = index_text.capitalize()
-        reference_text_list = reference_text.replace(","," ").split(" ")
-        reference_text_list = [i.strip(" .") for i in reference_text_list if len(i)>=1]
-
-        pattern = re.compile(r'.*?\n\n.*?')
-        pattern_matches = re.findall(pattern,index_text)
-
-        if len(pattern_matches)>0:
-            line = self.lineNumber(start_index+21)
-            output.append(f"At Line {line} : Index must be a sentence.\n")
-            return output
-
-
-        comma_list = [i.strip()[0].lower() for i in index_text.split(",") if len(i)>=1 and i.strip()[0].isalpha()]
-        if comma_list != sorted(comma_list):
-            line = self.lineNumber(start_index+21)
-            output.append(f"At Line {line} : Index terms are not in alphabetical order.\n")
-        
-        
-        for i,j in zip(index_text_list,reference_text_list):
-            if not sum([1 for _ in i if _.isupper()])>=2:
-                if i != j:
-                    line = self.lineNumber(start_index+21 + index_text.find(i))
-                    if j[0].isupper():
-                        output.append(f"At Line {line} : First letter of first word {i.strip()} must be in Capital Case.\n")
-                    else:
-                        output.append(f"At Line {line} : Word {i.strip()} is in the middle of the sentence, so should be in lower case.\n ")
-
-        
-        if full_stop_check_list[-1][-1] !=".":  # last character should be .
-            line = self.lineNumber(start_index+21 + index_text.find(full_stop_check_list[-1][-1]))
-            output.append(f"At Line {line} : Full stop not present at the end of index.\n")
-        return output if len(output)>=1 else output.append("No errors in Index.\n")
-    
     def lineNumber(self,target_index):
         line_count=0
         current_index=0
