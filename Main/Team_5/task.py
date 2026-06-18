@@ -1,624 +1,263 @@
 import re
+from typing import List, Optional
+
 class team_5:
-    
-    def __init__(self, latex_code, text_begin):
-        self.latex_code = latex_code
-        self.text_begin = text_begin
-    
-    
-    # def find_line_number_for_equation(self, latex_code, equation):
-    #    lines = latex_code.split('\n')
-    #    equation_lines = equation.split('\n')
-    #    print(equation)
-    #    print(equation_lines)
-    #    for i, line in enumerate(lines, start=1):
-    #     # Check if the first line of the equation is present in the current line
-    #     if equation_lines[0] in line:
-    #         # Check if all lines of the equation are in continuous order
-    #         print(equation_lines[0])
-    #         continuous_order = all(equation_lines[j] in lines[i + j] for j in range(len(equation_lines)))
-            
-    #         if continuous_order:
-    #             return i
+    """
+    A comprehensive linter to analyze LaTeX files for common style and formatting issues,
+    with a focus on IEEE typesetting standards.
+    """
 
-    #     return None
-   
-    def find_line_number_for_equation(self, latex_code, equation):
-        # Remove spaces and empty lines from the LaTeX code
-        #    lines = [line.strip() for line in latex_code.split('\n') if line.strip()]
-       lines = [line for line in latex_code.split('\n')]
-
-       # Remove spaces and empty lines from the equation
-       equation_lines = [line for line in equation.split('\n') if line.strip()]
-
-       for i, line in enumerate(lines, start=1):
-        # Check if the first line of the equation is present in the current line
-        
-        if equation_lines and equation_lines[0] in line:
-            # Check if all lines of the equation are in continuous order
-            continuous_order = all(equation_lines[j] == lines[i-1+ j] for j in range(len(equation_lines)))
-            # if not continuous_order:
-            #     print(f"Lines not matching at line {i}:")
-            #     for j in range(len(equation_lines)):
-            #         if equation_lines[j] != lines[i - 1 + j]:
-            #             print(f"Expected: {equation_lines[j]}")
-            #             print(f"Actual  : {lines[i - 1 + j]}")
-            # print(continuous_order)
-            # print(line)
-            # print('&')
-            # print(lines[i-1])
-            # print('$')
-            # print(equation_lines[0])
-            # print(equation_lines)
-            # print('%')
-            # for j in range(len(equation_lines)):
-            #     print(equation_lines[j]) 
-            #     print('@')
-            #     print(lines[i-1+j])
-            if continuous_order:
-                return i
-
-       return None
-        
-    def skip_line_by_first_word(self,text, first_word_to_skip):
-        # Split the text into lines
-        lines = text.split('\n')
-        
-        # Find and filter out the line with the specified first word
-        filtered_lines = [line for line in lines if line.split() and line.split()[0] != first_word_to_skip]
-        
-        # Join the remaining lines back into a single string
-        result = '\n'.join(filtered_lines)
-        
-        return result
-
-    def check_punctuation_between_multiequations(self,latex_content):
-        self.latex_content=latex_content
-        result = []
-        punc = False
-        char_next = False
-        equation_pattern = re.compile(r'\\begin{align}(.*?)\\end{align}',re.DOTALL)
-        equations = re.findall(equation_pattern, latex_content)
-        for equation in equations:
-            if(equation.strip().split()[0].startswith('%')):
-                continue
-            for i in range(0,len(equation) - 1):
-                if equation[i]=='\\' and equation[i+1]=='\\':
-                    
-                    for j in range(i - 1, -1, -1):
-                        if equation[j] != ' ':  # If the character is not a space
-                            if equation[j]==',':
-                                punc = True
-                                # print("1")
-                                # print(equation)
-                            break
-                    
-                    for k in range(i+2,i+10):
-                        # print(equation[j])
-                        if equation[k] not in [' ', '\n']:
-                            if equation[k]=="\\":  
-                                char_next = True
-                                # print(equation[k])
-                            if punc==True and equation[k]=="&":
-                                char_next = True
-                            break
-                # if char_next and punc:
-                #     print("yes")
-                #     print(equation)
-                if punc and (not char_next):
-                    # print("hi")
-                    # print(equation)
-                    line_no = self.find_line_number_for_equation(latex_content,equation)
-                    if(line_no==None):
-                            continue
-                    # result.append("here , is placed at the end of one of the equation, but it is not expexted there. The equation is  "+equation+"\n")
-                    result.append(f"Warning: Unexpected punction (',') is seen at the end of an equation whose line no is: {line_no}\n")
-                if char_next and (not punc):
-                    # print("bye")
-                    line_no = self.find_line_number_for_equation(latex_content,equation)
-                    if(line_no==None):
-                            continue
-                    # print(equation)
-                    # print(char_next)
-                    # print(equation[len(equation)-2])
-                    result.append(f"Warning: punction (',') is missing at the end of an equation whose line no is: {line_no}\n")
-                char_next=False
-                punc=False   
-        return result;  
-    def check_punctuations_for_array(self,latex_content):
-        self.latex_content=latex_content
-        result = []
-        punc = False
-        char_next = False
-        equation_pattern = re.compile(r'\\begin{array}{ll}(.*?)\\end{array}',re.DOTALL)
-        equations = re.findall(equation_pattern, latex_content)
-        for equation in equations:
-            if(equation.strip().split()[0].startswith('%')):
-                continue
-            # nnn=self.find_line_number_for_equation(latex_content,equation)
-            # print("***********************")
-            # print(nnn)
-            # print("@@@@@@@@@@@@@@@@@@@@@@@@")
-            for i in range(0,len(equation) - 1):
-                if equation[i]=='\\' and equation[i+1]=='\\':
-                    
-                    for j in range(i - 1, -1, -1):
-                        if equation[j] != ' ':  # If the character is not a space
-                            if equation[j]==',':
-                                punc = True
-                                # print("1")
-                                # print(equation)
-                            break
-                    
-                    for k in range(i+2,i+10):
-                        # print(equation[j])
-                        if equation[k] not in [' ', '\n']:
-                            if equation[k]=="\\":  
-                                char_next = True
-                                # print(equation[k])
-                            if punc==True and equation[k]=="&":
-                                char_next = True
-                            break
-                # if char_next and punc:
-                #     print("yes")
-                #     print(equation)
-                if punc and (not char_next):
-                    # print("hi")
-                    # print(equation)
-                    line_no = self.find_line_number_for_equation(latex_content,equation)
-                    if(line_no==None):
-                            continue                    
-                    result.append(f"Warning: Unexpected punction (',') is seen at the end of an equation whose line no is: {line_no}\n")
-                if char_next and (not punc):
-                    # print("bye")
-                    # print(equation)
-                    line_no = self.find_line_number_for_equation(latex_content,equation)
-                    if(line_no==None):
-                            continue           
-                    print(char_next)  
-                    print(equation[len(equation)-1])       
-                    result.append(f"Warning: punction (',') is missing at the end of an equation whose line no is: {line_no}\n")
-                char_next=False
-                punc=False   
-        return result; 
-                                 
-    def check_punctuation(self,latex_content):
+    def __init__(self, latex_content: str, text_begin=None, log_path: str = 'LOGII'):
+        """
+        Initializes the linter with LaTeX content.
+        """
         self.latex_content = latex_content
-            # Define a regular expression to match LaTeX equations and labels
-        equation_pattern = re.compile(r'\\begin{equation}(.*?)\\end{equation}', re.DOTALL)
-        result=[]
-        # Find all equations in the LaTeX file
-        equations = re.findall(equation_pattern, latex_content)
-    
-        for equation in equations:
-            if(equation.strip().split()[0].startswith('%')):
-                continue
-            # ng = self.find_line_number_for_equation(latex_content,equation)
-            # print("!!!!!!!!!!!!!!!!!!!!!!!!")
-            # print(ng)
-            # print("^^^^^^^^^^^^^^^^^^^^^^^^")
-            # Extract the equation label if present
-            label_match = re.search(r'\\label{([^}]*)}', equation)
-            equation_pattern1 = re.compile(r'\\begin{array}(.*?)\\end{array}', re.DOTALL)
-            equations1 = re.findall(equation_pattern1, equation)
+        self.log_path = 'LOGII'
+
+        # --- Pre-compiled Regex Patterns for Efficiency ---
+        self.env_patterns = {
+            name: re.compile(r'\\begin{' + name + r'}(.*?)\\end{' + name + r'}', re.DOTALL)
+            for name in ['equation', 'align', 'multline', 'gather']
+        }
+        self.patterns = {
+            'math_content': re.compile(r'\\begin{(?:equation|align|multline|gather|array)}.*?\\end{(?:equation|align|multline|gather|array)}|\$.*?\$|\\\(.*?\\\)', re.DOTALL),
+            'eqnarray': re.compile(r'\\begin{eqnarray}'),
+            'ref': re.compile(r'\\ref\{(eq:.+?)\}'),
+            'blank_before_env': re.compile(r'\n\s*\n(\s*\\begin{(?:equation|align|multline|gather)})'),
+            'blank_after_env': re.compile(r'(\\end{(?:equation|align|multline|gather)})\s*\n\s*\n'),
+        }
+
+    def _get_line_number_from_pos(self, pos: int) -> int:
+        """Calculates the 1-based line number from a character position."""
+        return self.latex_content.count('\n', 0, pos) + 1
+
+    def _get_next_meaningful_word(self, text_chunk: str) -> Optional[str]:
+        """Finds the first meaningful word, skipping comments and sectioning commands."""
+        non_comment_lines = [line for line in text_chunk.split('\n') if not line.strip().startswith('%')]
+        text_chunk = '\n'.join(non_comment_lines)
+        words = re.findall(r'\S+', text_chunk)
+        
+        for word in words:
+            if not word.startswith(('\\section', '\\subsection', '\\item', '\\label')):
+                if word.startswith(r'{\em'):
+                    return re.sub(r'[{\\}A-Za-z]+', '', word)
+                return word
+        return None
+
+    # --- Linter Check Functions ---
+
+    def check_end_of_env_punctuation(self) -> List[str]:
+        """RULE: Every equation should end with a punctuation mark."""
+        issues = []
+        for env_name in ['equation', 'align', 'gather']:
+            for match in self.env_patterns[env_name].finditer(self.latex_content):
+                env_content = match.group(1)
+                
+                if not env_content.strip() or env_content.strip().startswith('%') or r'\nonumber' in match.group(0):
+                    continue
+
+                # First, remove the label to avoid it interfering with punctuation check
+                preceding_text = re.split(r'\\label\{.*?\}', env_content)[0]
+                
+                # Clean the text by removing comments and trailing whitespace
+                clean_text = '\n'.join([line.split('%')[0].rstrip() for line in preceding_text.split('\n')]).rstrip()
+                
+                if not clean_text: continue
+
+                # Find the last non-empty line to report the correct line number
+                lines_in_content = clean_text.strip().split('\n')
+                last_line_content = lines_in_content[-1].strip() if lines_in_content else ''
+                
+                error_pos = match.start() + preceding_text.rfind(last_line_content)
+                line_no = self._get_line_number_from_pos(error_pos)
+
+                last_char = clean_text[-1]
+                text_after_env = self.latex_content[match.end():]
+                next_word = self._get_next_meaningful_word(text_after_env)
+
+                if not next_word: continue
+
+                if last_char in ['.', ',']:
+                    if next_word[0].isupper() and last_char != '.':
+                        issues.append(f"Line {line_no}: [Punctuation] To start a new sentence, end the equation with a period '.', not a comma.")
+                    elif not next_word[0].isupper() and not next_word.startswith((r'\item', '(', '\\section', '\\subsection')) and last_char != ',':
+                        issues.append(f"Line {line_no}: [Punctuation] To continue the sentence, end the equation with a comma ',', not a period.")
+                else:
+                    issues.append(f"Line {line_no}: [Punctuation] An equation that is part of a sentence must end with punctuation. Add a comma ',' or a period '.'")
+        return list(dict.fromkeys(issues))
+
+    def check_inter_equation_punctuation(self) -> List[str]:
+        """RULE: In 'align', intermediate equations must end with a comma."""
+        issues = []
+        for match in self.env_patterns['align'].finditer(self.latex_content):
+            content = match.group(1)
+            start_pos = match.start(1)
+            lines = content.strip().split(r'\\')
             
-            if equations1 != []:
-                equation1 = equations1[0]
-                last_char = equation1.strip()[-1] if equation1.strip() else None
-            else: 
-                last_char = equation.strip()[-1] if equation.strip() else None
-            if last_char =="." or last_char ==",":
-                index1 = latex_content.find(equation)
-            else: 
-                if label_match:
-                    label = label_match.group(1)
-                    # Check for punctuation before the label
-                    index = equation.find('\\label{' + label + '}')
-                    if index > 0:
-                        preceding_text = equation[:index]
-                    index1 = latex_content.find(equation)
-                    # Check if there is a comma or period at the end of the preceding text
-                    last_char = preceding_text.strip()[-1] if preceding_text.strip() else None
+            current_pos = start_pos
+            for line in lines[:-1]: # Check all lines except the last
+                clean_line = line.split('%')[0].rstrip()
+                if clean_line and not clean_line.endswith(','):
+                    line_no = self._get_line_number_from_pos(current_pos + line.rfind(line.strip()))
+                    issues.append(f"Line {line_no}: [Punctuation] To separate equations in an 'align' environment, end this line with a comma ','.")
+                current_pos += len(line) + 2 # Add 2 for the '\\'
+        return list(dict.fromkeys(issues))
 
-            if last_char in [',', '.']:
-                # print(f"Punctuation ({last_char}) found before label '{label}' in equation (if any):\n{equation}")
-    
-                # Find the index of \end{equation} after the current equation
-                end_equation_index = latex_content.find('\\end{equation}', index1)
-                if end_equation_index != -1:
-                    # Extract the text immediately after \end{equation}
-                    text_after_end = latex_content[end_equation_index + len('\\end{equation}'):].lstrip()
-    
-                    # Find the first word after \end{equation}
-                    # match = re.search(r'\w+', text_after_end)
-                    match = re.search(r'\S+', text_after_end)
-                    word_after_end = match.group()
-                    
-                    # print(word_after_end)
-                    # print('@@@@')
-                    # print(equation)
-                    # print(word_after_end)
-                    
-                    
-                    # if word_after_end == '%':
-                    #     end_index = match.end()  # Get the end index of the matched substring
-                    #     remaining_text = text_after_end[end_index:].strip()  # Get the text after the matched substring, removing leading/trailing whitespaces
+    def check_multline_operator_placement(self) -> List[str]:
+        """RULE: In 'multline', the math operator should be on the new line."""
+        issues = []
+        math_operators = [r'+', r'-', r'=', r'>', r'<', r'\times', r'\leq', r'\geq', r'/']
+        for match in self.env_patterns['multline'].finditer(self.latex_content):
+            content = match.group(1)
+            start_pos = match.start(1)
+            lines = content.strip().split(r'\\')
+            
+            current_pos = start_pos
+            for i, line_content in enumerate(lines):
+                line_no = self._get_line_number_from_pos(current_pos)
+                stripped_line = re.sub(r'^\s*\\hspace\*?\{.*?\}\s*', '', line_content.strip())
 
-                    #     # Check if the next line starts with '%'
-                    #     if remaining_text.startswith('%'):
-                    #         # If it does, take the first word after '%'
-                    #         word_after_end = remaining_text.split()[0]
-                    #     else:
-                    #         # If not, take the first word of the next line
-                    #         word_after_end = remaining_text.split('\n')[0].strip()
+                if i < len(lines) - 1 and any(stripped_line.endswith(op) for op in math_operators):
+                    issues.append(f"Line {line_no}: [Operator Placement] For clarity, move the operator from the end of this line to the beginning of the next.")
+                
+                if i > 0 and stripped_line and not any(stripped_line.startswith(op) for op in math_operators):
+                    issues.append(f"Line {line_no}: [Operator Placement] A new line in a 'multline' environment should start with a math operator (e.g., +, -, =).")
+                
+                current_pos += len(line_content) + 2
+        return list(dict.fromkeys(issues))
 
-                    #     a = 1
-                    #     while word_after_end == '%':
-                    #         # Handle the case where '%' is followed by another '%'
-                    #         word_after_end = remaining_text.split()[a]
-                    #         a += 1
-                    if word_after_end[0] == '%' or word_after_end == "%" :
-                        end_index = match.end()  # Get the end index of the matched substring    
-                        word_after_end = text_after_end[end_index:].split()[0]  # Get the next word after the matched substring
-                        end_index_dupe=end_index
-                        next_line_start_index = text_after_end.find('\n', end_index_dupe)
-                        word_after_end=text_after_end[next_line_start_index:].split()[0]
-                        text_after_end=text_after_end[next_line_start_index:]
-                        while(word_after_end[0]=='%' or word_after_end==" "):
-                        
-                           next_line_start_index = text_after_end.find('\n', end_index_dupe)
-                           end_index_dupe=next_line_start_index
-                           word_after_end=text_after_end[next_line_start_index:].split()[0]
-                           text_after_end=text_after_end[next_line_start_index:]
+    def check_equation_labeling(self) -> List[str]:
+        """RULE: Every numbered equation must have a label."""
+        issues = []
+        for name, pattern in self.env_patterns.items():
+            for match in pattern.finditer(self.latex_content):
+                if r'\nonumber' in match.group(0): continue
+                if r'\label' not in match.group(1):
+                    line_no = self._get_line_number_from_pos(match.start())
+                    issues.append(f"Line {line_no}: [Labeling] This '{name}' environment is missing a '\\label{{...}}'. Add one to make it referenceable.")
+        return list(dict.fromkeys(issues))
 
-                        # print(word_after_end)
-                        # print(equation)
-                        if word_after_end==r"{\em":
-                            index2 =  text_after_end.index(word_after_end)
-                            start_index_next_word = index2 + len(word_after_end) + 1
-                            word_after_end = text_after_end[start_index_next_word]
-                            # print(word_after_end)
-                            
-                        if word_after_end[0:11]=="\\subsection":
-                           next_line_start_index = text_after_end.find('\n', end_index_dupe)
-                           end_index_dupe=next_line_start_index
-                           word_after_end=text_after_end[next_line_start_index:].split()[0]
-                           text_after_end=text_after_end[next_line_start_index:]                           
-                           
-                        if word_after_end[0:8]=="\\section":
-                           next_line_start_index = text_after_end.find('\n', end_index_dupe)
-                           end_index_dupe=next_line_start_index
-                           word_after_end=text_after_end[next_line_start_index:].split()[0]
-                           text_after_end=text_after_end[next_line_start_index:]
-                        #    print(word_after_end)
-                           
-                        if word_after_end[0:6]=="\\label":
-                           next_line_start_index = text_after_end.find('\n', end_index_dupe)
-                           end_index_dupe=next_line_start_index
-                           word_after_end=text_after_end[next_line_start_index:].split()[0]
-                           text_after_end=text_after_end[next_line_start_index:]       
-                        #    print(word_after_end)                    
-                           
-                        
-                        if last_char=='.' and word_after_end[0]== '(':
-                            pass
-                        elif word_after_end[0].isalnum() and word_after_end[0].isupper():
-                            if last_char != '.':
-                                line_no = self.find_line_number_for_equation(latex_content,equation)
-                                if(line_no==None):
-                                          continue                                
-                                # print("The word after \\end{equation} starts with a capital letter, but the punctuation is not a full stop.")
-                                # result.append("The word after \\end{equation} starts with a capital letter, but the punctuation is not a full stop."+equation+"next word is:"+word_after_end+"\n"+"\n")
-                                result.append(f"Error: ',' is seen instead of '.'  at the end of equation whose line no is {line_no}\n")
-                        else:
-                            if last_char != ',':
-                                line_no = self.find_line_number_for_equation(latex_content,equation)
-                                if(line_no==None):
-                                    continue
-                                # print("The word after \\end{equation} does not start with a capital letter, but the punctuation is not a comma.")
-                                # print(word_after_end)
-                                # print(equation)
-                                result.append(f"Error: '.' is seen instead of ',' of at the end of equation whose line no is {line_no}\n")
-                    
-                    elif word_after_end:
-                        # word_after_end = match.group()
-                        # print(word_after_end)
-                        if r"\sub" in word_after_end:
-                            # print("hi")
-                            nextt=self.skip_line_by_first_word(text_after_end,word_after_end)
-                            # print("\\\\\\\\\\\\\\\\\\\its done//////////////////"+nextt[0])
-                            word_after_end = nextt
-                            
-                        if word_after_end==r"{\em":
-                            index2 =  text_after_end.index(word_after_end)
-                            start_index_next_word = index2 + len(word_after_end) + 1
-                            word_after_end = text_after_end[start_index_next_word]
-                        
-                        if word_after_end[0:11]=="\\subsection":
-                           next_line_start_index = text_after_end.find('\n', end_index_dupe)
-                           end_index_dupe=next_line_start_index
-                           word_after_end=text_after_end[next_line_start_index:].split()[0]
-                           text_after_end=text_after_end[next_line_start_index:]                           
-                           
-                        if word_after_end[0:8]=="\\section":
-                           next_line_start_index = text_after_end.find('\n', end_index_dupe)
-                           end_index_dupe=next_line_start_index
-                           word_after_end=text_after_end[next_line_start_index:].split()[0]
-                           text_after_end=text_after_end[next_line_start_index:]
-                        #    print(word_after_end)
-                           
-                        if word_after_end[0:6]=="\\label":
-                           next_line_start_index = text_after_end.find('\n', end_index_dupe)
-                           end_index_dupe=next_line_start_index
-                           word_after_end=text_after_end[next_line_start_index:].split()[0]
-                           text_after_end=text_after_end[next_line_start_index:]
-                            
-                        if last_char=='.' and word_after_end[0]== '(':
-                            pass
-                        elif last_char=='.' and word_after_end== r"\item":
-                            pass
-                        elif word_after_end and word_after_end[0].isupper():
-                            if last_char != '.':
-                                line_no = self.find_line_number_for_equation(latex_content,equation)
-                                if(line_no==None):
-                                   continue
-                                # print("The word after \\end{equation} starts with a capital letter, but the punctuation is not a full stop.")
-                                # result.append("The word after \\end{equation} starts with a capital letter, but the punctuation is not a full stop."+equation+"next word is:"+word_after_end+"\n"+"\n")
-                                result.append("Warning: '.' is not seen at the end of equation whose line no is {line_no}\n")
-                        else:
-                            if last_char != ',':
-                                line_no = self.find_line_number_for_equation(latex_content,equation)
-                                # print(word_after_end)
-                                # print("***")
-                                # result.append("Warning: ',' is not seen at the end of equation whose line no is {line_no}\n")
-                                if(line_no==None):
-                                  continue
-                                # print("The word after \\end{equation} does not start with a capital letter, but the punctuation is not a comma.")
-                                # result.append("The word after \\end{equation} does not start with a capital letter, but the punctuation is not a comma."+equation+"next word is:"+word_after_end+"\n"+"\n")
-                                result.append(f"Warning: ',' is not seen at the end of equation whose line no is {line_no}\n")
-                    else:
-                        print(f"Error: Word after end of equation not found.")
-                else:
-                    print(f"Error: end{equation} not found after the equation.")
-            elif last_char not in [',', '.']:
-                # print("Warning: Punctuation not found at the end of the equation (if any).")
-                line_no = self.find_line_number_for_equation(latex_content,equation)
-                if(line_no==None):
-                    continue                
-                # if(line_no==None):
-                #     print("****")
-                result.append(f"Warning: Punctuation not found at the end of the equation whose line no is {line_no}\n")
-        return result     
-    def check_punctuation_align(self,latex_content):
-        self.latex_content = latex_content
-            # Define a regular expression to match LaTeX equations and labels
-        equation_pattern = re.compile(r'\\begin{align}(.*?)\\end{align}', re.DOTALL)
-        result=[]
-        # Find all equations in the LaTeX file
-        equations = re.findall(equation_pattern, latex_content)
+    def check_equation_referencing(self) -> List[str]:
+        """RULE: Use '\\eqref{}' to reference equations."""
+        issues = []
+        for match in self.patterns['ref'].finditer(self.latex_content):
+            line_no = self._get_line_number_from_pos(match.start())
+            label = match.group(1)
+            issues.append(f"Line {line_no}: [Referencing] For consistency, use '\\eqref{{{label}}}' to reference equations, which adds parentheses automatically.")
+        return list(dict.fromkeys(issues))
 
-        for equation in equations:
-            if(equation.strip().split()[0].startswith('%')):
-                continue            
-            # Extract the equation label if present
-            label_match = re.search(r'\\label{([^}]*)}', equation)
-            last_char = equation.strip()[-1] if equation.strip() else None
-            if last_char =="." or last_char ==",":
-                index1 = latex_content.find(equation)
-            else: 
-                if label_match:
-                    label = label_match.group(1)
-    
-                    # Check for punctuation before the label
-                    index = equation.find('\\label{' + label + '}')
-                    if index > 0:
-                        preceding_text = equation[:index]
-                    index1 = latex_content.find(equation)
-                    # Check if there is a comma or period at the end of the preceding text
-                    last_char = preceding_text.strip()[-1] if preceding_text.strip() else None
+    def check_deprecated_environments(self) -> List[str]:
+        """RULE: Avoid using the deprecated 'eqnarray' environment."""
+        issues = []
+        for match in self.patterns['eqnarray'].finditer(self.latex_content):
+            line_no = self._get_line_number_from_pos(match.start())
+            issues.append(f"Line {line_no}: [Environments] The 'eqnarray' environment is outdated. Replace it with 'align' for better spacing and features.")
+        return list(dict.fromkeys(issues))
 
-            if last_char in [',', '.']:
-                # print(f"Punctuation ({last_char}) found before label '{label}' in equation (if any):\n{equation}")
-    
-                # Find the index of \end{equation} after the current equation
-                end_equation_index = latex_content.find('\\end{align}', index1)
-                if end_equation_index != -1:
-                    # Extract the text immediately after \end{align}
-                    text_after_end = latex_content[end_equation_index + len('\\end{align}'):].lstrip()
-    
-                    # Find the first word after \end{align}
-                    match = re.search(r'\S+', text_after_end)
-                    word_after_end = match.group()
-                    # print(word_after_end)
-                    
-                    if word_after_end[0] == '%' or word_after_end == "%" :
-                        end_index = match.end()  # Get the end index of the matched substring    
-                        word_after_end = text_after_end[end_index:].split()[0]  # Get the next word after the matched substring
-                        end_index_dupe=end_index
-                        next_line_start_index = text_after_end.find('\n', end_index_dupe)
-                        word_after_end=text_after_end[next_line_start_index:].split()[0]
-                        text_after_end=text_after_end[next_line_start_index:]
-                        while(word_after_end[0]=='%' or word_after_end==" "):
-                        
-                           next_line_start_index = text_after_end.find('\n', end_index_dupe)
-                           end_index_dupe=next_line_start_index
-                           word_after_end=text_after_end[next_line_start_index:].split()[0]
-                           text_after_end=text_after_end[next_line_start_index:]
-                        
-                        if word_after_end==r"{\em":
-                            index2 =  text_after_end.index(word_after_end)
-                            start_index_next_word = index2 + len(word_after_end) + 1
-                            word_after_end = text_after_end[start_index_next_word]
-                            # print(word_after_end)
-                        
-                        if word_after_end[0:11]=="\\subsection":
-                           next_line_start_index = text_after_end.find('\n', end_index_dupe)
-                           end_index_dupe=next_line_start_index
-                           word_after_end=text_after_end[next_line_start_index:].split()[0]
-                           text_after_end=text_after_end[next_line_start_index:]
-                           
-                        if word_after_end[0:8]=="\\section":
-                           next_line_start_index = text_after_end.find('\n', end_index_dupe)
-                           end_index_dupe=next_line_start_index
-                           word_after_end=text_after_end[next_line_start_index:].split()[0]
-                           text_after_end=text_after_end[next_line_start_index:]   
-                           
-                        if word_after_end[0:6]=="\\label":
-                           next_line_start_index = text_after_end.find('\n', end_index_dupe)
-                           end_index_dupe=next_line_start_index
-                           word_after_end=text_after_end[next_line_start_index:].split()[0]
-                           text_after_end=text_after_end[next_line_start_index:]
-                        
-                            
-                        if last_char=='.' and word_after_end[0]== '(':
-                            pass
-                        elif last_char=='.' and word_after_end[0].isalnum()==False:
-                            pass
-                        elif word_after_end[0].isalnum() and word_after_end[0].isupper():
-                            if last_char != '.':
-                                line_no = self.find_line_number_for_equation(latex_content,equation)
-                                if(line_no==None):
-                                    continue
-                                # print("The word after \\end{equation} starts with a capital letter, but the punctuation is not a full stop.")
-                                # result.append("The word after \\end{equation} starts with a capital letter, but the punctuation is not a full stop."+equation+"next word is:"+word_after_end+"\n"+"\n")
-                                result.append(f"Error: ',' is seen instead of '.'  at the end of equation whose line no is {line_no}\n")
-                        else:
-                            if last_char != ',':
-                                line_no = self.find_line_number_for_equation(latex_content,equation)
-                                if(line_no==None):
-                                    continue
-                                # print(word_after_end)
-                                # print("The word after \\end{equation} does not start with a capital letter, but the punctuation is not a comma.")
-                                result.append(f"Error: '.' is seen instead of ',' of at the end of equation whose line no is {line_no}\n")
-                    
-                    elif word_after_end:
-                        # word_after_end = match.group()
-                        # print(word_after_end)
-                        if r"\sub" in word_after_end:
-                            # print("hi")
-                            nextt=self.skip_line_by_first_word(text_after_end,word_after_end)
-                            # print("\\\\\\\\\\\\\\\\\\\its done//////////////////"+nextt[0])
-                            word_after_end = nextt
-                            
-                        if word_after_end==r"{\em":
-                            index2 =  text_after_end.index(word_after_end)
-                            start_index_next_word = index2 + len(word_after_end) + 1
-                            word_after_end = text_after_end[start_index_next_word]
-                        
-                        if word_after_end[0:11]=="\\subsection":
-                           next_line_start_index = text_after_end.find('\n', end_index_dupe)
-                           end_index_dupe=next_line_start_index
-                           word_after_end=text_after_end[next_line_start_index:].split()[0]
-                           text_after_end=text_after_end[next_line_start_index:]                           
-                           
-                        if word_after_end[0:8]=="\\section":
-                           next_line_start_index = text_after_end.find('\n', end_index_dupe)
-                           end_index_dupe=next_line_start_index
-                           word_after_end=text_after_end[next_line_start_index:].split()[0]
-                           text_after_end=text_after_end[next_line_start_index:]
-                        #    print(word_after_end)
-                           
-                        if word_after_end[0:6]=="\\label":
-                           next_line_start_index = text_after_end.find('\n', end_index_dupe)
-                           end_index_dupe=next_line_start_index
-                           word_after_end=text_after_end[next_line_start_index:].split()[0]
-                           text_after_end=text_after_end[next_line_start_index:]
-                            
-                        if last_char=='.' and word_after_end[0]== '(':
-                            pass
-                        elif last_char=='.' and word_after_end== r"\item":
-                            pass
-                        elif last_char=='.' and word_after_end[0].isalnum()==False:
-                            pass
-                        elif word_after_end and word_after_end[0].isupper():
-                            if last_char != '.':
-                                line_no = self.find_line_number_for_equation(latex_content,equation)
-                                if(line_no==None):
-                                    continue
-                                # print("The word after \\end{equation} starts with a capital letter, but the punctuation is not a full stop.")
-                                # result.append("The word after \\end{equation} starts with a capital letter, but the punctuation is not a full stop."+equation+"next word is:"+word_after_end+"\n"+"\n")
-                                result.append(f"Warning: '.' is not seen at the end of equation whose line no is {line_no}\n")
-                        else:
-                            if last_char != ',':
-                                line_no = self.find_line_number_for_equation(latex_content,equation)
-                                # print(word_after_end)
-                                # print("***")
-                                # result.append("Warning: ',' is not seen at the end of equation whose line no is {line_no}\n")
-                                if(line_no==None):
-                                    continue
-                                # print("The word after \\end{equation} does not start with a capital letter, but the punctuation is not a comma.")
-                                # result.append("The word after \\end{equation} does not start with a capital letter, but the punctuation is not a comma."+equation+"next word is:"+word_after_end+"\n"+"\n")
-                                result.append(f"Warning: ',' is not seen at the end of equation whose line no is {line_no}\n")
-                    else:
-                        print(f"Error: Word after end of align equation not found.")
-                else:
-                    print(f"Error: end{align} not found after the equation.")
-            elif last_char not in [',', '.']:
-                line_no = self.find_line_number_for_equation(latex_content,equation)
-                if(line_no==None):
-                         continue
-                # print("Warning: Punctuation not found at the end of the equation (if any).")
-                # if(line_no==None):
-                #    print("&&&&")
-                result.append(f"Warning: Punctuation not found at the end of the equation whose line no is {line_no}\n")
-        return result    
-    def check_math_operator(self,latex_content):
-        self.latex_content=latex_content
-        equation_pattern=re.compile(r'\\begin{multline}(.*?)\\end{multline}', re.DOTALL)
-        result=[]
-        math_operator=["+","-",">","<","=","/","\times"]
-        # other_operator=["\leq","\geq"]
-        other_operator = [r"\leq", r"\geq"]
+    def check_unicode_math_symbols(self) -> List[str]:
+        """RULE: Use LaTeX commands instead of Unicode characters for math symbols."""
+        issues = []
+        unicode_map = {'→': r'\rightarrow', '≤': r'\leq', '≥': r'\geq', '±': r'\pm', '×': r'\times', '÷': r'\div', '≠': r'\neq'}
+        for char, command in unicode_map.items():
+            for match in re.finditer(re.escape(char), self.latex_content):
+                line_no = self._get_line_number_from_pos(match.start())
+                issues.append(f"Line {line_no}: [Symbols] Replace the Unicode character '{char}' with its LaTeX command '{command}' for document compatibility.")
+        return list(dict.fromkeys(issues))
 
-        equations = re.findall(equation_pattern,latex_content)
-        for equation in equations:
-           dupeq=equation
-           if(equation.strip().split()[0].startswith('%')):
-              continue
-           equation=equation.replace(" ",'')
-        #    print(equation)
-           for i in range(len(equation)):
-               if equation[i]=="\\" and equation[i+1]=="\\":
-                   if equation[i-1] not in math_operator and equation[i+2] in math_operator:
-                        # print("yes***")
-                        # print(equation[i-1])
-                        pass
-                   if equation[i-1] not in math_operator and equation[i+2:i+6] in other_operator:
-                    #   // print("yes")
-                    #    print(equation[i-1])
-                       pass
-                   else:
-                       if equation[i-1] in math_operator:
-                        #    print("The math operator should not be there before \\")
-                        #    print(equation[i-1])
-                           line_no = self.find_line_number_for_equation(latex_content,dupeq)
-                           if(line_no==None):
-                                continue
-                           result.append(f"The math operator should not be there before in this equation whose line no is {line_no}\n")
-        return result
+    def check_math_function_formatting(self) -> List[str]:
+        """RULE: Use commands like '\\sin' for function names."""
+        issues = []
+        math_functions = ['sin', 'cos', 'tan', 'log', 'exp', 'det', 'lim', 'sec', 'csc', 'cot']
+        for math_match in self.patterns['math_content'].finditer(self.latex_content):
+            math_content = math_match.group(0)
+            for func in math_functions:
+                for func_match in re.finditer(r'(?<!\\)\b' + func + r'\b', math_content):
+                    line_no = self._get_line_number_from_pos(math_match.start() + func_match.start())
+                    issues.append(f"Line {line_no}: [Functions] For correct typographical formatting, write the function '{func}' as '\\{func}'.")
+        return list(dict.fromkeys(issues))
 
-    def run(self):  # The function which is going to be invoked in the wrapper class should contain no arguments
+    def check_text_in_math_mode(self) -> List[str]:
+        """RULE: Use '\\text{{...}}' for words inside math mode."""
+        issues = []
+        text_words = ['where', 'for', 'if', 'otherwise', 'subject to', 'and', 'or']
+        for math_match in self.patterns['math_content'].finditer(self.latex_content):
+            math_content = math_match.group(0)
+            # Create a version of the content with all \text{...} blocks removed to avoid false positives
+            content_without_text = re.sub(r'\\text\{.*?\}', '', math_content)
+            for word in text_words:
+                for word_match in re.finditer(r'\b' + word + r'\b', content_without_text, re.IGNORECASE):
+                    line_no = self._get_line_number_from_pos(math_match.start() + word_match.start())
+                    issues.append(f"Line {line_no}: [Text in Math] Words in math mode should be in upright font. Wrap '{word_match.group(0)}' in '\\text{{...}}'.")
+        return list(dict.fromkeys(issues))
 
-        output = [] # The output list with the errors to be returned
-        text = self.latex_code
-        result1=self.check_punctuation(text) 
-        result2=self.check_punctuation_align(text) 
-        result3=self.check_punctuation_between_multiequations(text) 
-        result4=self.check_punctuations_for_array(text)
-        result5=self.check_math_operator(text)
-        start="""
-===============================================================
-                Equation related comments
-===============================================================\n"""
-        oprel="""
-===============================================================
-                Math operator related comments
-===============================================================\n"""
-        output.extend(start)
-        output.extend(result1)
-        output.extend(result2)    
-        output.extend(result3)
-        output.extend(result4)
-        output.extend(oprel)
-        output.extend(result5)
-        return output
+    def check_blank_lines_around_equations(self) -> List[str]:
+        """RULE: Avoid extra blank lines around equations."""
+        issues = []
+        for match in self.patterns['blank_before_env'].finditer(self.latex_content):
+            line_no = self._get_line_number_from_pos(match.start(1))
+            issues.append(f"Line {line_no}: [Spacing] Remove the blank line before this equation to maintain consistent paragraph spacing.")
+        for match in self.patterns['blank_after_env'].finditer(self.latex_content):
+            line_no = self._get_line_number_from_pos(match.start(1))
+            issues.append(f"Line {line_no}: [Spacing] Remove the blank line after this equation to maintain consistent paragraph spacing.")
+        return list(dict.fromkeys(issues))
+
+    def check_align_character(self) -> List[str]:
+        """RULE: Each line in 'align' must have an alignment character '&'."""
+        issues = []
+        for match in self.env_patterns['align'].finditer(self.latex_content):
+            content = match.group(1)
+            start_pos = match.start(1)
+            lines = content.strip().split(r'\\')
+            
+            current_pos = start_pos
+            for line in lines:
+                if line.strip() and '&' not in line:
+                    line_no = self._get_line_number_from_pos(current_pos + line.find(line.strip()))
+                    issues.append(f"Line {line_no}: [Alignment] Add an '&' to this line to define the alignment point (e.g., place it before the '=' sign).")
+                current_pos += len(line) + 2
+        return list(dict.fromkeys(issues))
+
+    def run(self) -> str:
+        """
+        Runs all linter checks and returns a formatted report as a single string.
+        """
+        if not self.latex_content.strip():
+            return ""
+
+        issue_groups = {
+            "Punctuation of Equations": self.check_end_of_env_punctuation(),
+            "Punctuation Within Multi-line Equations": self.check_inter_equation_punctuation(),
+            "Operator Placement in Long Equations": self.check_multline_operator_placement(),
+            "Equation Labeling": self.check_equation_labeling(),
+            "Equation Referencing Style": self.check_equation_referencing(),
+            "Use of Modern Environments": self.check_deprecated_environments(),
+            "Math Symbol Formatting": self.check_unicode_math_symbols(),
+            "Math Function Formatting": self.check_math_function_formatting(),
+            "Text Formatting in Math Mode": self.check_text_in_math_mode(),
+            "Spacing Around Equations": self.check_blank_lines_around_equations(),
+            "Alignment Character in 'align'": self.check_align_character(),
+        }
+
+        report_lines = []
+        
+        for title, issues in issue_groups.items():
+            if issues:
+                report_lines.append("=" * 70)
+                report_lines.append(title.center(70))
+                report_lines.append("=" * 70)
+                report_lines.extend(issues)
+                report_lines.append("")
+
+        if not report_lines:
+            return "" # Return empty string if no issues are found
+
+        final_report_string = '\n'.join(report_lines)
+
+        try:
+            with open(self.log_path, 'w', encoding='utf-8') as log_file:
+                log_file.write(final_report_string)
+        except IOError as e:
+            error_message = f"\nError: Could not write to log file at '{self.log_path}'. Reason: {e}"
+            final_report_string += error_message
+
+        return final_report_string
